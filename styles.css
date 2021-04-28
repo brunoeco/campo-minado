@@ -31,19 +31,26 @@ body {
     border-right-color: #7B7B7B;
 }
 
-#title{
+#top{
+    display: flex;
     width: 500px;
     margin-bottom: 20px;
-    text-align: center;
+    justify-content: space-between;
     background-color: #BDBDBD;
 }
 
-#title img {
+#top img {
     margin: 5px 0;
+    height: 50px;
 }
 
-#title img:hover{
+#top > img:hover{
     cursor: pointer;
+}
+
+#top > div {
+    display: flex;
+    margin: 0 10px;
 }
 
 #game {
@@ -51,7 +58,7 @@ body {
     height: 500px;
 }
 
-#game, #title {
+#game, #top {
     border: 5px solid;
 
     border-top-color: #7B7B7B;
@@ -67,7 +74,7 @@ div[id*='div-']{
     height: 10%;
 }
 
-img{
+#game img{
     width: 50px;
     height: 50px;
 }
