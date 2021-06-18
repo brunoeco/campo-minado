@@ -1,49 +1,50 @@
-const game = document.getElementById('game');
-
-const square = [];
-const filledSquare = [];
-const fieldSize = 10;
-const numberOfBombs = 15;
-
-var time1 = 0;
-var time2 = 0;
-var time3 = 0;
-var time;
-
-var gameStart = false
+'use strict'
 
 function squareOnClick(id) {
     if(!gameStart){
+        createGame(id);
+
         time = setInterval(timeCount, 1000)
 
         gameStart = true;
+        gameOver = false;
     }
 
     openSquare(id)
 }
 
-//Inicia o jogo
-
-document.addEventListener('load', createGame())
-document.addEventListener('load', bombsCount())
-
-function createGame(){
+function loadSquareImage() {
     let restart = document.getElementById('div-0');
-
-    createSquare();
 
     if(restart){
         clearInterval(time)
 
         gameStart = false;
 
+        for(let i = 0; i < fieldSize; i++){
+            let tempFilledSquare = []
+            for(let n = 0; n < fieldSize; n++){
+                tempFilledSquare[n] = 'fechado';
+            }
+            filledSquare[i] = tempFilledSquare;
+        }
+
+
+        const timeDiv = document.getElementById('time');
+
+        time1 = 0;
+        time2 = 0;
+        time3 = 0;
+
+        timeDiv.querySelector('img:nth-child(1)').setAttribute('src', `./assets/time_0.jpg`);
+        timeDiv.querySelector('img:nth-child(2)').setAttribute('src', `./assets/time_0.jpg`);
+        timeDiv.querySelector('img:nth-child(3)').setAttribute('src', `./assets/time_0.jpg`);
+
         document.getElementById('start').setAttribute('src', './assets/start.jpeg')
 
         fillSquare(filledSquare);
         return;
     }
-
-
 
     for(let i = 0; i < fieldSize; i++){
         let div = document.createElement('div');
@@ -56,14 +57,20 @@ function createGame(){
             let img = document.createElement('img');
 
             img.setAttribute('id', `${id}`);
-            img.setAttribute('onclick', 'squareOnClick(id)')
+            img.setAttribute('onclick', `squareOnClick(id)`)
             img.setAttribute('src', `./assets/fechado.jpeg`)
             document.getElementById(`div-${i}`).appendChild(img);
         }
     }
 }
 
-//Define as posições para preenchimento
+function createGame(id){
+    createSquare(id);
+
+    loadSquareImage();
+}
+
+//Define as posi��es para preenchimento
 
 function posXY(x, y){
     let posX = [-1, 0, 1];
@@ -87,7 +94,11 @@ function posXY(x, y){
 
 //Cria o campo minado // MATRIZ
 
-function createSquare(){
+function createSquare(id){
+    let squareId = parseInt(id);
+    let posX = Math.floor(squareId/fieldSize);
+    let posY = squareId % fieldSize;
+
     for(let i = 0; i < fieldSize; i++){
         let tempSquare = []
         let tempFilledSquare = []
@@ -103,8 +114,15 @@ function createSquare(){
         let bombPositionX = Math.floor(Math.random() * fieldSize);
         let bombPositionY = Math.floor(Math.random() * fieldSize);
 
-            
-        if(!(square[bombPositionX][bombPositionY] === 'bomba')){
+        if((bombPositionX === posX && bombPositionY === posY)
+            || (bombPositionX === posX && bombPositionY === posY - 1)
+            || (bombPositionX === posX && bombPositionY === posY + 1)
+            || (bombPositionX === posX - 1 && bombPositionY === posY - 1)
+            || (bombPositionX === posX + 1 && bombPositionY === posY - 1)
+            || (bombPositionX === posX + 1 && bombPositionY === posY + 1)){
+
+                continue;
+        }else if(!(square[bombPositionX][bombPositionY] === 'bomba')){
             square[bombPositionX][bombPositionY] = 'bomba';
         } else{
             i--
@@ -142,12 +160,12 @@ function createSquare(){
 
 //Preenche o campo
 
-function fillSquare(value, open = 0){
+function fillSquare(field){
     for(let x = 0; x < fieldSize; x++){
         for(let y = 0; y < fieldSize; y++){
             let id = y + (x*fieldSize);
 
-            if(filledSquare[x][y] === 'fechado' && open === 1){
+            /*if(filledSquare[x][y] === 'fechado' && open === 1){
                 continue;
             }
 
@@ -155,9 +173,9 @@ function fillSquare(value, open = 0){
                 document.getElementById(`${id}`).classList.add('filled');
             }else{
                 document.getElementById(`${id}`).classList.remove('filled');
-            }
+            }*/
 
-            document.getElementById(`${id}`).setAttribute('src', `./assets/${value[x][y]}.jpeg`);
+            document.getElementById(`${id}`).setAttribute('src', `./assets/${field[x][y]}.jpeg`);
 
         }
     }
@@ -167,32 +185,37 @@ function fillSquare(value, open = 0){
 //Abre o quadrado clicado
 
 function openSquare(e){
-    let squareId = parseInt(e);
-    let squareX = Math.floor(squareId/fieldSize);
-    let squareY = squareId % fieldSize;
+    if(!gameOver) {
+        let squareId = parseInt(e);
+        let squareX = Math.floor(squareId/fieldSize);
+        let squareY = squareId % fieldSize;
 
-    if(square[squareX][squareY] === 'bomba'){
-        clearInterval(time)
+        if(square[squareX][squareY] === 'bomba'){
+            clearInterval(time);
 
-        square[squareX][squareY] = 'bomba_1'
+            gameOver = true
 
-        fillSquare(square);
-        document.getElementById('start').setAttribute('src', './assets/restart.jpeg')
-        return;
+            square[squareX][squareY] = 'bomba_1'
+
+            fillSquare(square);
+
+            document.getElementById('start').setAttribute('src', './assets/restart.jpeg')
+
+            return;
+        }
+
+        //Fun��o recursiva para abrir casas ao lado
+
+        openAround(squareX, squareY);
     }
-
-    //Função recursiva para abrir casas ao lado
-
-    openAround(squareX, squareY);
 }
 
-function openAround(squareX, squareY){
-    let open = 1;
-    let zero = 0;
-
+function openAround(squareX, squareY, zero = 0){
     let pos = posXY(squareX, squareY);
     let posX = pos.posX
     let posY = pos.posY 
+    
+    filledSquare[squareX][squareY] = square[squareX][squareY];
 
     for(let x = 0; x < 3; x++){
         for(let y = 0; y < 3; y++){
@@ -202,21 +225,21 @@ function openAround(squareX, squareY){
 
             if(square[squareX+(posX[x])][squareY+(posY[y])] === 'aberto_0' && filledSquare[squareX+(posX[x])][squareY+(posY[y])] === 'fechado'){
                 filledSquare[squareX + (posX[x])][squareY + (posY[y])] = square[squareX + (posX[x])][squareY + (posY[y])];
-                zero ++;
 
-                openAround(squareX + (posX[x]), squareY + (posY[y]));
+                openAround(squareX + (posX[x]), squareY + (posY[y]), zero + 1);
             }
             
             if(zero > 0) {
                 filledSquare[squareX + (posX[x])][squareY + (posY[y])] = square[squareX + (posX[x])][squareY + (posY[y])];
             }
+            
         }
     }
 
-    filledSquare[squareX][squareY] = square[squareX][squareY];
+    zero --;
 
-    fillSquare(filledSquare, open);
-    
+    fillSquare(filledSquare);        
+
 }
 
 //Contador e tempo
@@ -259,3 +282,26 @@ function timeCount(){
         return
     }
 }
+
+
+var game;
+
+const square = [];
+const filledSquare = [];
+const fieldSize = 10;
+const numberOfBombs = 20;
+
+var time1 = 0;
+var time2 = 0;
+var time3 = 0;
+var time;
+
+var gameStart = false;
+var gameOver = false;
+
+game = document.getElementById('game');
+
+//Inicia o jogo
+
+document.addEventListener('load', loadSquareImage())
+document.addEventListener('load', bombsCount())
